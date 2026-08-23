@@ -34,6 +34,7 @@ export default function NavBar() {
         {!cargando && sesion && (
           <>
             <Link href="/coleccion" className="navbar-btn">Mi Colección</Link>
+            <Link href="/solicitar" className="navbar-btn">Solicitar carta</Link>
             <span className="navbar-email">{sesion.user.email}</span>
             <button className="navbar-btn" onClick={cerrarSesion}>Cerrar sesión</button>
           </>
