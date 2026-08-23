@@ -16,6 +16,7 @@ export default function PhotocardsPage() {
   const [cartas, setCartas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [guardando, setGuardando] = useState(null);
 
   useEffect(() => {
     async function cargarDatos() {
@@ -42,10 +43,37 @@ export default function PhotocardsPage() {
     cargarDatos();
   }, [edicionId, integranteId]);
 
-  function manejarAccion(accion, carta) {
-    alert(
-      `Muy pronto vas a poder marcar esta carta como "${accion}".\nPrimero necesitamos construir el inicio de sesión.`
-    );
+  async function manejarAccion(estado, cartaId) {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      alert('Necesitas iniciar sesión para guardar tu colección.');
+      window.location.href = '/login';
+      return;
+    }
+
+    setGuardando(cartaId + estado);
+    const usuarioId = session.user.id;
+
+    await supabase
+      .from('coleccion')
+      .delete()
+      .eq('usuario_id', usuarioId)
+      .eq('photocard_id', cartaId);
+
+    const { error } = await supabase.from('coleccion').insert({
+      usuario_id: usuarioId,
+      photocard_id: cartaId,
+      estado,
+    });
+
+    setGuardando(null);
+
+    if (error) {
+      alert('Hubo un problema guardando: ' + error.message);
+    } else {
+      alert('¡Guardado! Marcaste esta carta como "' + estado + '".');
+    }
   }
 
   return (
@@ -82,13 +110,25 @@ export default function PhotocardsPage() {
             )}
             <div className="photocard-info">
               <div className="photocard-actions">
-                <button className="photocard-btn have" onClick={() => manejarAccion('Tengo', carta)}>
+                <button
+                  className="photocard-btn have"
+                  disabled={guardando === carta.id + 'tengo'}
+                  onClick={() => manejarAccion('tengo', carta.id)}
+                >
                   + Have It
                 </button>
-                <button className="photocard-btn wishlist" onClick={() => manejarAccion('Busco', carta)}>
+                <button
+                  className="photocard-btn wishlist"
+                  disabled={guardando === carta.id + 'busco'}
+                  onClick={() => manejarAccion('busco', carta.id)}
+                >
                   + Wishlist
                 </button>
-                <button className="photocard-btn trade" onClick={() => manejarAccion('Para Intercambio', carta)}>
+                <button
+                  className="photocard-btn trade"
+                  disabled={guardando === carta.id + 'intercambio'}
+                  onClick={() => manejarAccion('intercambio', carta.id)}
+                >
                   + For Trade
                 </button>
               </div>
