@@ -229,3 +229,10 @@ h1 {
 .photocard-btn.trade.active {
   background: var(--pink);
 }
+
+.photocard-context {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin: 0;
+}
