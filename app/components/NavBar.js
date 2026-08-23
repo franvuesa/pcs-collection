@@ -33,6 +33,7 @@ export default function NavBar() {
       <div className="navbar-actions">
         {!cargando && sesion && (
           <>
+            <Link href="/coleccion" className="navbar-btn">Mi Colección</Link>
             <span className="navbar-email">{sesion.user.email}</span>
             <button className="navbar-btn" onClick={cerrarSesion}>Cerrar sesión</button>
           </>
