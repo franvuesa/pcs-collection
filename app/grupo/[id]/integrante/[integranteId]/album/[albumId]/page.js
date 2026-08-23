@@ -47,6 +47,14 @@ export default function PhotocardsPage() {
     );
   }
 
+  // Agrupamos las cartas por su campo "version" (ej: "Fallen ver.", "Misfit ver.")
+  const grupos = {};
+  cartas.forEach((carta) => {
+    const clave = carta.version || 'Sin versión';
+    if (!grupos[clave]) grupos[clave] = [];
+    grupos[clave].push(carta);
+  });
+
   return (
     <main className="page">
       <Link href={`/grupo/${grupoId}/integrante/${integranteId}`} className="back-link">
@@ -70,29 +78,34 @@ export default function PhotocardsPage() {
         <p className="status">Todavía no hay photocards cargadas para este álbum e integrante.</p>
       )}
 
-      <div className="photocard-grid">
-        {cartas.map((carta) => (
-          <div key={carta.id} className="photocard-card">
-            {carta.foto_url && (
-              <img src={carta.foto_url} alt={carta.version} className="photocard-image" />
-            )}
-            <div className="photocard-info">
-              <p className="photocard-version">{carta.version}</p>
-              <div className="photocard-actions">
-                <button className="photocard-btn have" onClick={() => manejarAccion('Tengo', carta)}>
-                  + Have It
-                </button>
-                <button className="photocard-btn wishlist" onClick={() => manejarAccion('Busco', carta)}>
-                  + Wishlist
-                </button>
-                <button className="photocard-btn trade" onClick={() => manejarAccion('Para Intercambio', carta)}>
-                  + For Trade
-                </button>
+      {Object.entries(grupos).map(([versionLabel, cartasDeEstaVersion]) => (
+        <section key={versionLabel}>
+          <h2 className="version-heading">{versionLabel}</h2>
+          <div className="photocard-grid">
+            {cartasDeEstaVersion.map((carta) => (
+              <div key={carta.id} className="photocard-card">
+                {carta.foto_url && (
+                  <img src={carta.foto_url} alt={carta.version} className="photocard-image" />
+                )}
+                <div className="photocard-info">
+                  <p className="photocard-version">{carta.version}</p>
+                  <div className="photocard-actions">
+                    <button className="photocard-btn have" onClick={() => manejarAccion('Tengo', carta)}>
+                      + Have It
+                    </button>
+                    <button className="photocard-btn wishlist" onClick={() => manejarAccion('Busco', carta)}>
+                      + Wishlist
+                    </button>
+                    <button className="photocard-btn trade" onClick={() => manejarAccion('Para Intercambio', carta)}>
+                      + For Trade
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </section>
+      ))}
     </main>
   );
 }
