@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -42,10 +43,10 @@ export default function GruposPage() {
 
       <div className="grid">
         {grupos.map((grupo) => (
-          <button key={grupo.id} className="card">
+          <Link key={grupo.id} href={`/grupo/${grupo.id}`} className="card">
             <span className="card-glow" aria-hidden="true"></span>
             <span className="card-label">{grupo.nombre}</span>
-          </button>
+          </Link>
         ))}
       </div>
     </main>
