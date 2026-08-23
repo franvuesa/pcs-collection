@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap');
+
+:root {
+  --bg: #0b0b10;
+  --surface: #16161f;
+  --surface-border: #26262f;
+  --text: #f2f1f6;
+  --text-dim: #8d8b98;
+  --pink: #ff6ec7;
+  --periwinkle: #7c83fd;
+  --aqua: #63e6e2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+}
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 64px 24px;
+}
+
+.page-header {
+  margin-bottom: 40px;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--aqua);
+  margin-bottom: 12px;
+}
+
+h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 40px;
+  margin: 0;
+}
+
+.status {
+  color: var(--text-dim);
+}
+
+.status-error {
+  color: var(--pink);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  text-align: left;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: transparent;
+}
+
+.card-glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--pink), var(--periwinkle), var(--aqua));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover .card-glow {
+  opacity: 0.25;
+}
+
+.card-label {
+  position: relative;
+  z-index: 1;
+}
