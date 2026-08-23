@@ -4,10 +4,18 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 
-// Un campo que muestra un desplegable con opciones existentes + "Agregar nuevo",
-// o directamente una caja de texto si todavía no hay opciones posibles
-// (por ejemplo, si el Grupo elegido es nuevo, no puede haber Álbumes existentes).
-function CampoConOpciones({ label, opciones, valor, onValorChange, nuevo, onNuevoChange, soloTexto, placeholderNuevo }) {
+function CampoConOpciones({
+  label,
+  opciones,
+  valor,
+  onValorChange,
+  nuevo,
+  onNuevoChange,
+  soloTexto,
+  placeholderNuevo,
+  permitirNuevo = true,
+  notaExtra,
+}) {
   if (soloTexto) {
     return (
       <label className="auth-label">
@@ -39,9 +47,9 @@ function CampoConOpciones({ label, opciones, valor, onValorChange, nuevo, onNuev
             {o.nombre}
           </option>
         ))}
-        <option value="nuevo">+ Agregar nuevo…</option>
+        {permitirNuevo && <option value="nuevo">+ Agregar nuevo…</option>}
       </select>
-      {valor === 'nuevo' && (
+      {valor === 'nuevo' && permitirNuevo && (
         <input
           type="text"
           required
@@ -52,6 +60,7 @@ function CampoConOpciones({ label, opciones, valor, onValorChange, nuevo, onNuev
           style={{ marginTop: 8 }}
         />
       )}
+      {notaExtra && <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{notaExtra}</span>}
     </label>
   );
 }
@@ -81,16 +90,14 @@ export default function SolicitarPage() {
   const [error, setError] = useState(null);
   const [enviado, setEnviado] = useState(false);
 
-  // Cargar los grupos existentes al entrar a la página.
   useEffect(() => {
     supabase
       .from('grupos')
-      .select('id, nombre')
+      .select('id, nombre, integrantes_completos')
       .order('nombre')
       .then(({ data }) => setGrupos(data || []));
   }, []);
 
-  // Cuando cambia el Grupo elegido, recargamos Integrantes y Álbumes de ESE grupo.
   useEffect(() => {
     setIntegranteId('');
     setIntegranteNuevo('');
@@ -119,7 +126,6 @@ export default function SolicitarPage() {
     }
   }, [grupoId]);
 
-  // Cuando cambia el Álbum elegido, recargamos las Ediciones de ESE álbum.
   useEffect(() => {
     setEdicionId('');
     setEdicionNuevo('');
@@ -134,6 +140,9 @@ export default function SolicitarPage() {
         .then(({ data }) => setEdiciones(data || []));
     }
   }, [albumId]);
+
+  const grupoSeleccionado = grupos.find((g) => String(g.id) === grupoId);
+  const integrantesCompletos = grupoSeleccionado ? grupoSeleccionado.integrantes_completos : false;
 
   const integranteSoloTexto = grupoId === '' || grupoId === 'nuevo';
   const albumSoloTexto = grupoId === '' || grupoId === 'nuevo';
@@ -165,6 +174,12 @@ export default function SolicitarPage() {
 
     if (!grupoTexto || !integranteTexto || !albumTexto || !edicionTexto) {
       setError('Por favor completa Grupo, Integrante, Álbum y Edición.');
+      setEnviando(false);
+      return;
+    }
+
+    if (integrantesCompletos && integranteId === 'nuevo') {
+      setError('Este grupo ya tiene todos sus integrantes cargados. Elige uno de la lista.');
       setEnviando(false);
       return;
     }
@@ -253,6 +268,10 @@ export default function SolicitarPage() {
           onNuevoChange={setIntegranteNuevo}
           soloTexto={integranteSoloTexto}
           placeholderNuevo="Nombre del integrante"
+          permitirNuevo={!integrantesCompletos}
+          notaExtra={
+            integrantesCompletos ? 'Este grupo ya tiene todos sus integrantes cargados.' : null
+          }
         />
 
         <CampoConOpciones
