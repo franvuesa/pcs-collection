@@ -135,7 +135,7 @@ export default function SolicitarPage() {
             value={edicionTexto}
             onChange={(e) => setEdicionTexto(e.target.value)}
             className="auth-input"
-            placeholder="Ej: CARAT Ver. – Jeonghan"
+            placeholder="Ej: CARAT Ver. / Photobook Ver. A"
           />
         </label>
 
