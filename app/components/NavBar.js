@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 
+const ADMIN_EMAIL = 'fransotom.fs@gmail.com';
+
 export default function NavBar() {
   const [sesion, setSesion] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -27,6 +29,8 @@ export default function NavBar() {
     await supabase.auth.signOut();
   }
 
+  const esAdmin = sesion && sesion.user.email === ADMIN_EMAIL;
+
   return (
     <nav className="navbar">
       <Link href="/" className="navbar-brand">PCS Collection</Link>
@@ -35,6 +39,7 @@ export default function NavBar() {
           <>
             <Link href="/coleccion" className="navbar-btn">Mi Colección</Link>
             <Link href="/solicitar" className="navbar-btn">Solicitar carta</Link>
+            {esAdmin && <Link href="/admin" className="navbar-btn">Admin</Link>}
             <span className="navbar-email">{sesion.user.email}</span>
             <button className="navbar-btn" onClick={cerrarSesion}>Cerrar sesión</button>
           </>
