@@ -5,55 +5,40 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '../../../../../../../lib/supabaseClient';
 
-export default function PhotocardsPage() {
+export default function EdicionesPage() {
   const params = useParams();
   const grupoId = params.id;
   const integranteId = params.integranteId;
   const albumId = params.albumId;
 
-  const [album, setAlbum] = useState(null);
-  const [cartas, setCartas] = useState([]);
+  const [integrante, setIntegrante] = useState(null);
+  const [ediciones, setEdiciones] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function cargarDatos() {
-      const { data: albumData, error: errorAlbum } = await supabase
-        .from('albumes')
+      const { data: integranteData, error: errorIntegrante } = await supabase
+        .from('integrantes')
         .select('*')
-        .eq('id', albumId)
+        .eq('id', integranteId)
         .single();
 
-      const { data: cartasData, error: errorCartas } = await supabase
-        .from('photocards')
+      const { data: edicionesData, error: errorEdiciones } = await supabase
+        .from('ediciones')
         .select('*')
-        .eq('album_id', albumId)
-        .eq('integrante_id', integranteId);
+        .eq('album_id', albumId);
 
-      if (errorAlbum || errorCartas) {
-        setError((errorAlbum || errorCartas).message);
+      if (errorIntegrante || errorEdiciones) {
+        setError((errorIntegrante || errorEdiciones).message);
       } else {
-        setAlbum(albumData);
-        setCartas(cartasData);
+        setIntegrante(integranteData);
+        setEdiciones(edicionesData);
       }
       setCargando(false);
     }
     cargarDatos();
   }, [albumId, integranteId]);
-
-  function manejarAccion(accion, carta) {
-    alert(
-      `Muy pronto vas a poder marcar "${carta.version}" como "${accion}".\nPrimero necesitamos construir el inicio de sesión.`
-    );
-  }
-
-  // Agrupamos las cartas por su campo "version" (ej: "Fallen ver.", "Misfit ver.")
-  const grupos = {};
-  cartas.forEach((carta) => {
-    const clave = carta.version || 'Sin versión';
-    if (!grupos[clave]) grupos[clave] = [];
-    grupos[clave].push(carta);
-  });
 
   return (
     <main className="page">
@@ -62,11 +47,11 @@ export default function PhotocardsPage() {
       </Link>
 
       <header className="page-header">
-        <span className="eyebrow">{album ? album.nombre : 'PCS Collection'}</span>
-        <h1>Photocards</h1>
+        <span className="eyebrow">{integrante ? integrante.nombre : 'PCS Collection'}</span>
+        <h1>Elige la edición</h1>
       </header>
 
-      {cargando && <p className="status">Cargando cartas…</p>}
+      {cargando && <p className="status">Cargando ediciones…</p>}
 
       {error && (
         <p className="status status-error">
@@ -74,38 +59,22 @@ export default function PhotocardsPage() {
         </p>
       )}
 
-      {!cargando && !error && cartas.length === 0 && (
-        <p className="status">Todavía no hay photocards cargadas para este álbum e integrante.</p>
+      {!cargando && !error && ediciones.length === 0 && (
+        <p className="status">Todavía no hay ediciones cargadas para este álbum.</p>
       )}
 
-      {Object.entries(grupos).map(([versionLabel, cartasDeEstaVersion]) => (
-        <section key={versionLabel}>
-          <h2 className="version-heading">{versionLabel}</h2>
-          <div className="photocard-grid">
-            {cartasDeEstaVersion.map((carta) => (
-              <div key={carta.id} className="photocard-card">
-                {carta.foto_url && (
-                  <img src={carta.foto_url} alt={carta.version} className="photocard-image" />
-                )}
-                <div className="photocard-info">
-                  <p className="photocard-version">{carta.version}</p>
-                  <div className="photocard-actions">
-                    <button className="photocard-btn have" onClick={() => manejarAccion('Tengo', carta)}>
-                      + Have It
-                    </button>
-                    <button className="photocard-btn wishlist" onClick={() => manejarAccion('Busco', carta)}>
-                      + Wishlist
-                    </button>
-                    <button className="photocard-btn trade" onClick={() => manejarAccion('Para Intercambio', carta)}>
-                      + For Trade
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+      <div className="grid">
+        {ediciones.map((edicion) => (
+          <Link
+            key={edicion.id}
+            href={`/grupo/${grupoId}/integrante/${integranteId}/album/${albumId}/edicion/${edicion.id}`}
+            className="card"
+          >
+            <span className="card-glow" aria-hidden="true"></span>
+            <span className="card-label">{edicion.nombre}</span>
+          </Link>
+        ))}
+      </div>
     </main>
   );
 }
