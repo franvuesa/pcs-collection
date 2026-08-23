@@ -1,29 +1,171 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 
+// Un campo que muestra un desplegable con opciones existentes + "Agregar nuevo",
+// o directamente una caja de texto si todavía no hay opciones posibles
+// (por ejemplo, si el Grupo elegido es nuevo, no puede haber Álbumes existentes).
+function CampoConOpciones({ label, opciones, valor, onValorChange, nuevo, onNuevoChange, soloTexto, placeholderNuevo }) {
+  if (soloTexto) {
+    return (
+      <label className="auth-label">
+        {label}
+        <input
+          type="text"
+          required
+          value={nuevo}
+          onChange={(e) => onNuevoChange(e.target.value)}
+          className="auth-input"
+          placeholder={placeholderNuevo}
+        />
+      </label>
+    );
+  }
+
+  return (
+    <label className="auth-label">
+      {label}
+      <select
+        required
+        value={valor}
+        onChange={(e) => onValorChange(e.target.value)}
+        className="auth-input"
+      >
+        <option value="">Selecciona…</option>
+        {opciones.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.nombre}
+          </option>
+        ))}
+        <option value="nuevo">+ Agregar nuevo…</option>
+      </select>
+      {valor === 'nuevo' && (
+        <input
+          type="text"
+          required
+          value={nuevo}
+          onChange={(e) => onNuevoChange(e.target.value)}
+          className="auth-input"
+          placeholder={placeholderNuevo}
+          style={{ marginTop: 8 }}
+        />
+      )}
+    </label>
+  );
+}
+
 export default function SolicitarPage() {
   const router = useRouter();
-  const [grupo, setGrupo] = useState('');
-  const [integrante, setIntegrante] = useState('');
-  const [album, setAlbum] = useState('');
-  const [edicionTexto, setEdicionTexto] = useState('');
+
+  const [grupos, setGrupos] = useState([]);
+  const [grupoId, setGrupoId] = useState('');
+  const [grupoNuevo, setGrupoNuevo] = useState('');
+
+  const [integrantes, setIntegrantes] = useState([]);
+  const [integranteId, setIntegranteId] = useState('');
+  const [integranteNuevo, setIntegranteNuevo] = useState('');
+
+  const [albumes, setAlbumes] = useState([]);
+  const [albumId, setAlbumId] = useState('');
+  const [albumNuevo, setAlbumNuevo] = useState('');
+
+  const [ediciones, setEdiciones] = useState([]);
+  const [edicionId, setEdicionId] = useState('');
+  const [edicionNuevo, setEdicionNuevo] = useState('');
+
   const [comentario, setComentario] = useState('');
   const [archivo, setArchivo] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
   const [enviado, setEnviado] = useState(false);
 
+  // Cargar los grupos existentes al entrar a la página.
+  useEffect(() => {
+    supabase
+      .from('grupos')
+      .select('id, nombre')
+      .order('nombre')
+      .then(({ data }) => setGrupos(data || []));
+  }, []);
+
+  // Cuando cambia el Grupo elegido, recargamos Integrantes y Álbumes de ESE grupo.
+  useEffect(() => {
+    setIntegranteId('');
+    setIntegranteNuevo('');
+    setIntegrantes([]);
+    setAlbumId('');
+    setAlbumNuevo('');
+    setAlbumes([]);
+    setEdicionId('');
+    setEdicionNuevo('');
+    setEdiciones([]);
+
+    if (grupoId && grupoId !== 'nuevo') {
+      supabase
+        .from('integrantes')
+        .select('id, nombre')
+        .eq('grupo_id', grupoId)
+        .order('nombre')
+        .then(({ data }) => setIntegrantes(data || []));
+
+      supabase
+        .from('albumes')
+        .select('id, nombre')
+        .eq('grupo_id', grupoId)
+        .order('nombre')
+        .then(({ data }) => setAlbumes(data || []));
+    }
+  }, [grupoId]);
+
+  // Cuando cambia el Álbum elegido, recargamos las Ediciones de ESE álbum.
+  useEffect(() => {
+    setEdicionId('');
+    setEdicionNuevo('');
+    setEdiciones([]);
+
+    if (albumId && albumId !== 'nuevo') {
+      supabase
+        .from('ediciones')
+        .select('id, nombre')
+        .eq('album_id', albumId)
+        .order('nombre')
+        .then(({ data }) => setEdiciones(data || []));
+    }
+  }, [albumId]);
+
+  const integranteSoloTexto = grupoId === '' || grupoId === 'nuevo';
+  const albumSoloTexto = grupoId === '' || grupoId === 'nuevo';
+  const edicionSoloTexto = albumSoloTexto || albumId === '' || albumId === 'nuevo';
+
+  function textoFinal(soloTexto, valorId, nuevoTexto, opciones) {
+    if (soloTexto || valorId === 'nuevo') return nuevoTexto.trim();
+    const encontrado = opciones.find((o) => String(o.id) === valorId);
+    return encontrado ? encontrado.nombre : '';
+  }
+
   async function manejarSubmit(e) {
     e.preventDefault();
     setEnviando(true);
     setError(null);
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
       router.push('/login');
+      return;
+    }
+
+    const grupoTexto = textoFinal(false, grupoId, grupoNuevo, grupos);
+    const integranteTexto = textoFinal(integranteSoloTexto, integranteId, integranteNuevo, integrantes);
+    const albumTexto = textoFinal(albumSoloTexto, albumId, albumNuevo, albumes);
+    const edicionTexto = textoFinal(edicionSoloTexto, edicionId, edicionNuevo, ediciones);
+
+    if (!grupoTexto || !integranteTexto || !albumTexto || !edicionTexto) {
+      setError('Por favor completa Grupo, Integrante, Álbum y Edición.');
+      setEnviando(false);
       return;
     }
 
@@ -48,9 +190,9 @@ export default function SolicitarPage() {
     const { data: urlData } = supabase.storage.from('solicitudes').getPublicUrl(nombreArchivo);
 
     const { error: errorInsert } = await supabase.from('solicitudes').insert({
-      grupo_texto: grupo,
-      integrante_texto: integrante,
-      album_texto: album,
+      grupo_texto: grupoTexto,
+      integrante_texto: integranteTexto,
+      album_texto: albumTexto,
       edicion_texto: edicionTexto,
       comentario,
       foto_url: urlData.publicUrl,
@@ -91,53 +233,49 @@ export default function SolicitarPage() {
       </header>
 
       <form onSubmit={manejarSubmit} className="auth-form">
-        <label className="auth-label">
-          Grupo
-          <input
-            type="text"
-            required
-            value={grupo}
-            onChange={(e) => setGrupo(e.target.value)}
-            className="auth-input"
-            placeholder="Ej: SEVENTEEN"
-          />
-        </label>
+        <CampoConOpciones
+          label="Grupo"
+          opciones={grupos}
+          valor={grupoId}
+          onValorChange={setGrupoId}
+          nuevo={grupoNuevo}
+          onNuevoChange={setGrupoNuevo}
+          soloTexto={false}
+          placeholderNuevo="Nombre del grupo nuevo"
+        />
 
-        <label className="auth-label">
-          Integrante
-          <input
-            type="text"
-            required
-            value={integrante}
-            onChange={(e) => setIntegrante(e.target.value)}
-            className="auth-input"
-            placeholder="Ej: Jeonghan"
-          />
-        </label>
+        <CampoConOpciones
+          label="Integrante"
+          opciones={integrantes}
+          valor={integranteId}
+          onValorChange={setIntegranteId}
+          nuevo={integranteNuevo}
+          onNuevoChange={setIntegranteNuevo}
+          soloTexto={integranteSoloTexto}
+          placeholderNuevo="Nombre del integrante"
+        />
 
-        <label className="auth-label">
-          Álbum
-          <input
-            type="text"
-            required
-            value={album}
-            onChange={(e) => setAlbum(e.target.value)}
-            className="auth-input"
-            placeholder="Ej: FML"
-          />
-        </label>
+        <CampoConOpciones
+          label="Álbum"
+          opciones={albumes}
+          valor={albumId}
+          onValorChange={setAlbumId}
+          nuevo={albumNuevo}
+          onNuevoChange={setAlbumNuevo}
+          soloTexto={albumSoloTexto}
+          placeholderNuevo="Nombre del álbum"
+        />
 
-        <label className="auth-label">
-          Edición / versión
-          <input
-            type="text"
-            required
-            value={edicionTexto}
-            onChange={(e) => setEdicionTexto(e.target.value)}
-            className="auth-input"
-            placeholder="Ej: CARAT Ver. / Photobook Ver. A"
-          />
-        </label>
+        <CampoConOpciones
+          label="Edición / versión"
+          opciones={ediciones}
+          valor={edicionId}
+          onValorChange={setEdicionId}
+          nuevo={edicionNuevo}
+          onNuevoChange={setEdicionNuevo}
+          soloTexto={edicionSoloTexto}
+          placeholderNuevo="Ej: CARAT Ver. / Photobook Ver. A"
+        />
 
         <label className="auth-label">
           Foto de la carta
