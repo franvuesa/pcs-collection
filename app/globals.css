@@ -211,3 +211,21 @@ h1 {
   cursor: pointer;
   text-decoration: underline;
 }
+
+.photocard-btn.active {
+  color: #0b0b10;
+  border-color: transparent;
+  font-weight: 500;
+}
+
+.photocard-btn.have.active {
+  background: var(--aqua);
+}
+
+.photocard-btn.wishlist.active {
+  background: var(--periwinkle);
+}
+
+.photocard-btn.trade.active {
+  background: var(--pink);
+}
